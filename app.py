@@ -54,10 +54,10 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # Clear session and redirect to login page
     session.pop('logged_in', None)
     session.pop('email', None)
     return redirect(url_for('login'))
+
 
 
 @app.route('/home')
@@ -65,6 +65,10 @@ def home():
     # Check login status before rendering the home page
     if 'logged_in' not in session or not session['logged_in']:
         return redirect(url_for('login'))
+    
+    if session.get('email') != TEMP_EMAIL:
+        return redirect(url_for('login'))  # or render a 403 page for unauthorized users
+    
     return render_template('admin.html')
 
 
@@ -102,23 +106,6 @@ def disable_user(collection, user_id):
         return jsonify({"error": str(e)}), 500
 
 
-# Enable a user (update isDisabled field)
-@app.route('/enable-user/<collection>/<user_id>', methods=['POST'])
-def enable_user(collection, user_id):
-    if 'logged_in' not in session or not session['logged_in']:
-        return jsonify({"error": "Unauthorized access"}), 401
-    try:
-        if collection not in ['buyers', 'sellers']:
-            return jsonify({"error": "Invalid collection name"}), 400
-
-        # Update the 'isDisabled' field in Firestore
-        user_ref = db.collection(collection).document(user_id)
-        user_ref.update({"isDisabled": False})
-        return jsonify({"message": f"User {user_id} enabled successfully."}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
 # Delete a user from Firestore and Firebase Authentication
 @app.route('/delete-user/<collection>/<user_id>', methods=['DELETE'])
 def delete_user(collection, user_id):
@@ -146,8 +133,6 @@ def delete_user(collection, user_id):
             return jsonify({"error": "User not found."}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

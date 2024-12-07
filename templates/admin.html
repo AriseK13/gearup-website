@@ -249,6 +249,19 @@
             }
         }
 
+        // Prevent the user from going back to the home page after logout
+        if (window.history && window.history.pushState) {
+            window.history.pushState('forward', null, './login');
+            window.history.forward(1);
+        }
+
+        // Prevent URL from changing when clicking the back button on the login page
+        window.addEventListener("popstate", function(event) {
+            window.history.pushState(null, document.title, location.href);
+        });
+
+        
+
         document.querySelectorAll('.navbar a').forEach(link => {
             link.addEventListener('click', function () {
                 document.querySelectorAll('.content section').forEach(section => {
